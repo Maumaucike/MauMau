@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jitsi Meet - Host Controlado</title>
+    <style>
+        /* Estilos básicos */
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f4f4f4;
+        }
+
+        #meet {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="meet"></div> <!-- Contêiner onde o Jitsi será carregado -->
+
+    <!-- API Jitsi externa -->
+    <script src="https://meet.jit.si/external_api.js"></script>
+
+    <script>
+        const domain = "meet.jit.si";
+        const options = {
+            roomName: "MinhaSalaComHostControlado", // Nome da sala
+            width: "100%", // Largura total
+            height: "100%", // Altura total
+            parentNode: document.querySelector('#meet'), // Contêiner para exibir a sala
+            interfaceConfigOverwrite: {
+                SHOW_JITSI_WATERMARK: false, // Remove a marca d'água do Jitsi
+                SHOW_WATERMARK_FOR_GUESTS: false // Remove a marca d'água para convidados
+            },
+        };
+
+        // Instância da API do Jitsi Meet
+        const api = new JitsiMeetExternalAPI(domain, options);
+
+        let hostParticipantId = null; // Armazena o ID do anfitrião
+
+        // Evento disparado quando alguém entra na videoconferência
+        api.addEventListener('videoConferenceJoined', (event) => {
+            const participantId = event.id;
+            const participantName = event.displayName;
+
+            // Definir o primeiro participante como anfitrião
+            if (!hostParticipantId) {
+                hostParticipantId = participantId; // Anfitrião identificado
+                console.log('Anfitrião identificado:', participantName);
+            }
+        });
+
+        // Evento disparado quando um participante sai
+        api.addEventListener('participantLeft', (event) => {
+            const participantId = event.id;
+
+            // Verifica se o anfitrião saiu da reunião
+            if (participantId === hostParticipantId) {
+                console.log("O anfitrião saiu da reunião. Encerrando a conferência...");
+
+                // Encerra a reunião para todos
+                api.executeCommand('hangup');
+
+                // Exibe uma mensagem de que a reunião terminou
+                document.body.innerHTML = "<h1>A reunião terminou porque o anfitrião saiu.</h1>";
+            }
+        });
+
+        // Função opcional para encerrar manualmente a reunião (pode ser usada em um botão)
+        function endMeeting() {
+            api.executeCommand('hangup');
+        }
+    </script>
+
+</body>
+</html>
